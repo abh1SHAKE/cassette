@@ -1,0 +1,26 @@
+<div 
+    class="card flex flex-row gap-[40px] bg-[#121212] text-[#c4c4c4] rounded-[12px]"
+>
+    <div class="flex flex-col items-center justify-between p-[24px] gap-[16px]">
+        <div class="w-full font-gabarito text-md font-bold">flow.</div>
+        <div class="font-poppins flex flex-col pl-[16px] gap-[8px]">
+            <div class="text-3xl font-bold text-balance">{{ songs[currSong].title }}</div>
+            <div class="text-sm font-medium text-[#b3b3b3]">{{ songs[currSong].artists }}</div>
+            <div class="progress-bar max-w-[200px] relative pt-[20px]">
+                <div class="foreground absolute bg-[#c4c4c4] w-[50%] h-[4px] rounded-lg"></div>
+                <div class="background bg-[#383838] h-[4px] w-full rounded-lg"></div>
+            </div>
+        </div>
+        <div class="flex flex-col font-poppins w-full gap-[8px]">
+            <div class="text-sm font-medium">{{ songs[currSong].owner }}</div>
+            <div class="flex flex-row gap-[8px]">
+                @for (genre of songs[currSong].genres; track $index) {
+                    <div class="bg-[#383838] px-[8px] py-[2px] text-sm font-small rounded-xl">{{ genre }}</div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="scroll-container flex flex-col">
+        <img [src]="songs[currSong].albumArt" alt="album art" class="object-contain h-[400px] rounded"/>
+    </div>
+</div>

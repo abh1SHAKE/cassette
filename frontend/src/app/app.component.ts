@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { FlowComponent } from './sections/flow/flow.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [FlowComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
