@@ -1,4 +1,5 @@
-import { Component, HostListener, OnDestroy, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, HostListener, OnDestroy, AfterViewInit, ElementRef, output } from '@angular/core';
+import ColorThief from 'colorthief';
 
 @Component({
   selector: 'app-song-card',
@@ -8,12 +9,18 @@ import { Component, HostListener, OnDestroy, AfterViewInit, ElementRef } from '@
 })
 export class SongCardComponent implements OnDestroy, AfterViewInit {
   currSong = 0;
+  colorsChanged = output<string[]>();
 
-  constructor(private elementRef: ElementRef) {}
+  private colorThief: ColorThief;
+
+  constructor(private elementRef: ElementRef) {
+    this.colorThief = new ColorThief();
+  }
 
   ngAfterViewInit() {
     setTimeout(() => {
       this.elementRef.nativeElement.focus();
+      this.extractColorsFromCurrentSong();
     }, 100);
   }
 
@@ -206,6 +213,46 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
     } else {
       this.currSong = 0;
     }
+
+    this.extractColorsFromCurrentSong();
+  }
+
+  private extractColorsFromCurrentSong() {
+    const currentSong = this.songs[this.currSong];
+
+    if (!currentSong || !currentSong.albumArt) {
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      try {
+        const dominantColor = this.colorThief.getColor(img);
+        const palette = this.colorThief.getPalette(img, 5);
+
+        const colors = palette.map((rgb: number[]) => 
+          this.rgbToHex(rgb[0], rgb[1], rgb[2])
+        );
+
+        this.colorsChanged.emit(colors);
+      } catch (error) {
+        console.error("Could not extract colors:", error);
+        this.colorsChanged.emit(["#121212", "#1a1a1a", "#2a2a2a"]);
+      }
+    };
+
+    img.onerror = () => {
+      console.error("Could not load album art image");
+      this.colorsChanged.emit(["#121212", "#1a1a1a", "#2a2a2a"]);
+    };
+
+    img.src = currentSong.albumArt;
+  }
+
+  private rgbToHex(r: number, g: number, b: number): string {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
 
   ngOnDestroy() {
