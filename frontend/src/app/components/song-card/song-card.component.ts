@@ -45,6 +45,13 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
       artists: "Tame Impala",
       albumArt: "https://i.scdn.co/image/ab67616d0000b2739e1cfc756886ac782e363d79",
       genres: ["#indie", "#neo-psychedelic"]
+    },
+    {
+      owner: "The Weeknd",
+      title: "Blinding Lights (Remastered)",
+      artists: "The Weeknd",
+      albumArt: "https://i.scdn.co/image/ab67616d0000b273b5097b81179824803664aaaf",
+      genres: ["#american pop", "#pop"]
     }
   ];
 
