@@ -45,10 +45,9 @@ export class FlowComponent implements OnDestroy {
   private createFlowingGradient(colors: string[], time: number): string {
     if (!colors || colors.length < 3) return this.backgroundGradient;
 
-    const darkenedColors = colors.map((color) => this.darkenColor(color, 0.2));
-    const lightenedColors = colors.map((color) =>
-      this.lightenColor(color, 0.1)
-    );
+    const harmonizedColors = this.harmonizeColors(colors);
+    const darkenedColors = harmonizedColors.map((color) => this.darkenColor(color, 0.2));
+    const mutedColors = harmonizedColors.map((color) => this.darkenColor(color, 0.4));
 
     const speed1 = 20;
     const speed2 = 15;
@@ -65,17 +64,17 @@ export class FlowComponent implements OnDestroy {
     const blendFactor = (Math.sin(time * 0.2) + 1) / 2; 
     const primaryColor = this.blendColors(
       darkenedColors[0],
-      lightenedColors[0],
+      mutedColors[0],
       blendFactor
     );
     const secondaryColor = this.blendColors(
       darkenedColors[1],
-      lightenedColors[1],
+      mutedColors[1],
       1 - blendFactor
     );
     const tertiaryColor = this.blendColors(
       darkenedColors[2],
-      lightenedColors[2],
+      mutedColors[2],
       blendFactor
     );
 
@@ -139,6 +138,73 @@ export class FlowComponent implements OnDestroy {
     return `#${r.toString(16).padStart(2, '0')}${g
       .toString(16)
       .padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  private harmonizeColors(colors: string[]): string[] {
+    return colors.map(color => {
+      const { h, s, l } = this.hexToHsl(color);
+      
+      const cappedL = Math.min(l, 0.5);
+      const boostedS = s < 0.2 ? Math.min(s + 0.3, 0.6) : s;
+      
+      return this.hslToHex(h, boostedS, cappedL);
+    });
+  }
+
+  private hexToHsl(hex: string): { h: number; s: number; l: number } {
+    hex = hex.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+
+    return { h: h * 360, s, l };
+  }
+
+  private hslToHex(h: number, s: number, l: number): string {
+    h = h / 360;
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+
+    const toHex = (c: number) => {
+      const hex = Math.round(c * 255).toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    };
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
 
   private getAverageBrightness(colors: string[]): number {

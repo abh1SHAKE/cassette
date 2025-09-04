@@ -48,10 +48,17 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
     },
     {
       owner: "The Weeknd",
-      title: "Blinding Lights (Remastered)",
+      title: "Blinding Lights",
       artists: "The Weeknd",
       albumArt: "https://i.scdn.co/image/ab67616d0000b273b5097b81179824803664aaaf",
       genres: ["#american pop", "#pop"]
+    },
+    {
+      owner: "Frank Ocean",
+      title: "Lost",
+      artists: "Frank Ocean",
+      albumArt: "https://i.scdn.co/image/ab67616d00001e027aede4855f6d0d738012e2e5",
+      genres: ["#r&b", "#soul"]
     }
   ];
 
