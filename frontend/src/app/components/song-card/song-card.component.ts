@@ -57,8 +57,22 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
       owner: "Frank Ocean",
       title: "Lost",
       artists: "Frank Ocean",
-      albumArt: "https://i.scdn.co/image/ab67616d00001e027aede4855f6d0d738012e2e5",
+      albumArt: "https://i.scdn.co/image/ab67616d0000b2737aede4855f6d0d738012e2e5",
       genres: ["#r&b", "#soul"]
+    },
+    {
+      owner: "Childish Gambino",
+      title: "3005",
+      artists: "Childish Gambino",
+      albumArt: "https://i.scdn.co/image/ab67616d0000b27321b2b485aef32bcc96c1875c",
+      genres: ["#hip hop", "#rap", "#pop"]
+    },
+    {
+      owner: "Mike Posner",
+      title: "I Took A Pill In Ibiza - Seeb Remix",
+      artists: "Mike Posner, Seeb",
+      albumArt: "https://i.scdn.co/image/ab67616d0000b2731db27fa11dbafa67857da8f3",
+      genres: ["#pop", "#dance"]
     }
   ];
 
