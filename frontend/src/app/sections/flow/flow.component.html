@@ -1,6 +1,10 @@
-<div 
-    class="h-screen w-screen flex items-center justify-center px-[20px]"
-    [style.background]="backgroundGradient"
->
-    <app-song-card (colorsChanged)="onColorsChanged($event)"/>
+<div class="h-screen w-screen flex items-center justify-center relative overflow-hidden">
+    <div 
+        #liquidEtherContainer 
+        class="absolute inset-0 w-full h-full"
+        style="z-index: 0;"
+    ></div>
+    <div class="relative z-10 px-[20px]">
+        <app-song-card (colorsChanged)="onColorsChanged($event)"/>
+    </div>
 </div>
