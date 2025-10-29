@@ -16,11 +16,18 @@ import { trigger, transition, style, animate } from '@angular/animations';
   styleUrl: './song-card.component.scss',
   animations: [
     trigger('slideUp', [
-      transition('* => *', [
+      transition(':enter', [
         style({ transform: 'translateY(100%)', opacity: 0 }),
         animate(
-          '500ms cubic-bezier(0.22, 1, 0.36, 1)',
+          '400ms cubic-bezier(0.22, 1, 0.36, 1)',
           style({ transform: 'translateY(0)', opacity: 1 })
+        ),
+      ]),
+      transition(':leave', [
+        style({ position: 'absolute', width: '100%' }),
+        animate(
+          '400ms cubic-bezier(0.22, 1, 0.36, 1)',
+          style({ transform: 'translateY(-100%)', opacity: 0 })
         ),
       ]),
     ]),
