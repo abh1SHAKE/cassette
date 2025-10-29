@@ -1,15 +1,38 @@
-import { Component, HostListener, OnDestroy, AfterViewInit, ElementRef, output } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  OnDestroy,
+  AfterViewInit,
+  ElementRef,
+  output,
+} from '@angular/core';
 import ColorThief from 'colorthief';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-song-card',
   imports: [],
   templateUrl: './song-card.component.html',
-  styleUrl: './song-card.component.scss'
+  styleUrl: './song-card.component.scss',
+  animations: [
+    trigger('slideUp', [
+      transition('* => *', [
+        style({ transform: 'translateY(100%)', opacity: 0 }),
+        animate(
+          '500ms cubic-bezier(0.22, 1, 0.36, 1)',
+          style({ transform: 'translateY(0)', opacity: 1 })
+        ),
+      ]),
+    ]),
+  ],
 })
 export class SongCardComponent implements OnDestroy, AfterViewInit {
   currSong = 0;
   colorsChanged = output<string[]>();
+
+  animationCycle = 0;
+  songKey = 0;
+  isAnimating = false;
 
   private colorThief: ColorThief;
 
@@ -26,54 +49,61 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
 
   songs = [
     {
-      owner: "Martin Garrix",
-      title: "Pressure (feat. Tove Lo)",
-      artists: "Martin Garrix, Tove Lo",
-      albumArt: "https://i.scdn.co/image/ab67616d0000b273b3adecd5865a661d12d07b6d",
-      genres: ["#edm", "#dance", "#electronics"]
+      owner: 'Martin Garrix',
+      title: 'Pressure (feat. Tove Lo)',
+      artists: 'Martin Garrix, Tove Lo',
+      albumArt:
+        'https://i.scdn.co/image/ab67616d0000b273b3adecd5865a661d12d07b6d',
+      genres: ['#edm', '#dance', '#electronics'],
     },
     {
-      owner: "Marc Talein",
-      title: "Lights On (feat. Haidara)",
-      artists: "Marc Talein, Haidara",
-      albumArt: "https://i.scdn.co/image/ab67616d0000b2731559bee4e15c2adae6f8b9f5",
-      genres: ["#lounge-ambient", "#house"]
+      owner: 'Marc Talein',
+      title: 'Lights On (feat. Haidara)',
+      artists: 'Marc Talein, Haidara',
+      albumArt:
+        'https://i.scdn.co/image/ab67616d0000b2731559bee4e15c2adae6f8b9f5',
+      genres: ['#lounge-ambient', '#house'],
     },
     {
-      owner: "Tame Impala",
-      title: "The Less I Know The Better",
-      artists: "Tame Impala",
-      albumArt: "https://i.scdn.co/image/ab67616d0000b2739e1cfc756886ac782e363d79",
-      genres: ["#indie", "#neo-psychedelic"]
+      owner: 'Tame Impala',
+      title: 'The Less I Know The Better',
+      artists: 'Tame Impala',
+      albumArt:
+        'https://i.scdn.co/image/ab67616d0000b2739e1cfc756886ac782e363d79',
+      genres: ['#indie', '#neo-psychedelic'],
     },
     {
-      owner: "The Weeknd",
-      title: "Blinding Lights",
-      artists: "The Weeknd",
-      albumArt: "https://i.scdn.co/image/ab67616d0000b273b5097b81179824803664aaaf",
-      genres: ["#american pop", "#pop"]
+      owner: 'The Weeknd',
+      title: 'Blinding Lights',
+      artists: 'The Weeknd',
+      albumArt:
+        'https://i.scdn.co/image/ab67616d0000b273b5097b81179824803664aaaf',
+      genres: ['#american pop', '#pop'],
     },
     {
-      owner: "Frank Ocean",
-      title: "Lost",
-      artists: "Frank Ocean",
-      albumArt: "https://i.scdn.co/image/ab67616d0000b2737aede4855f6d0d738012e2e5",
-      genres: ["#r&b", "#soul"]
+      owner: 'Frank Ocean',
+      title: 'Lost',
+      artists: 'Frank Ocean',
+      albumArt:
+        'https://i.scdn.co/image/ab67616d0000b2737aede4855f6d0d738012e2e5',
+      genres: ['#r&b', '#soul'],
     },
     {
-      owner: "Childish Gambino",
-      title: "3005",
-      artists: "Childish Gambino",
-      albumArt: "https://i.scdn.co/image/ab67616d0000b27321b2b485aef32bcc96c1875c",
-      genres: ["#hip hop", "#rap", "#pop"]
+      owner: 'Childish Gambino',
+      title: '3005',
+      artists: 'Childish Gambino',
+      albumArt:
+        'https://i.scdn.co/image/ab67616d0000b27321b2b485aef32bcc96c1875c',
+      genres: ['#hip hop', '#rap', '#pop'],
     },
     {
-      owner: "Mike Posner",
-      title: "I Took A Pill In Ibiza - Seeb Remix",
-      artists: "Mike Posner, Seeb",
-      albumArt: "https://i.scdn.co/image/ab67616d0000b2731db27fa11dbafa67857da8f3",
-      genres: ["#pop", "#dance"]
-    }
+      owner: 'Mike Posner',
+      title: 'I Took A Pill In Ibiza - Seeb Remix',
+      artists: 'Mike Posner, Seeb',
+      albumArt:
+        'https://i.scdn.co/image/ab67616d0000b2731db27fa11dbafa67857da8f3',
+      genres: ['#pop', '#dance'],
+    },
   ];
 
   private touchStartY: number | null = null;
@@ -90,15 +120,15 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
   private readonly WHEEL_THRESHOLD = 50;
   private readonly WHEEL_RESET_DELAY = 100;
   private readonly TOUCH_THRESHOLD = 30;
-  private readonly GESTURE_LOCK_TIME = 150;
+  private readonly GESTURE_LOCK_TIME = 400;
   private readonly FAST_SWIPE_VELOCITY = 0.5;
   private readonly FAST_SWIPE_TIME_LIMIT = 300;
 
   @HostListener('wheel', ['$event'])
   onWheel(event: WheelEvent) {
     event.preventDefault();
-    
-    if (this.isProcessingWheel) return;
+
+    if (this.isProcessingWheel || this.isAnimating) return;
 
     this.wheelDeltaAccumulator += Math.abs(event.deltaY);
 
@@ -109,7 +139,7 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
     if (this.wheelDeltaAccumulator >= this.WHEEL_THRESHOLD) {
       this.isProcessingWheel = true;
       this.changeSong(event.deltaY > 0 ? 1 : -1);
-      
+
       this.wheelDeltaAccumulator = 0;
       setTimeout(() => {
         this.isProcessingWheel = false;
@@ -123,8 +153,8 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(event: TouchEvent) {
-    if (this.isProcessingGesture) return;
-    
+    if (this.isProcessingGesture || this.isAnimating) return;
+
     const now = Date.now();
     this.touchStartY = event.touches[0].clientY;
     this.touchStartTime = now;
@@ -135,7 +165,13 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
 
   @HostListener('touchmove', ['$event'])
   onTouchMove(event: TouchEvent) {
-    if (!this.touchStartY || this.isProcessingGesture || this.touchProcessed) return;
+    if (
+      !this.touchStartY ||
+      this.isProcessingGesture ||
+      this.touchProcessed ||
+      this.isAnimating
+    )
+      return;
 
     const now = Date.now();
     const currentY = event.touches[0].clientY;
@@ -149,10 +185,11 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
 
     if (Math.abs(deltaY) >= this.TOUCH_THRESHOLD) {
       event.preventDefault();
-      
-      const isFastSwipe = this.touchVelocity >= this.FAST_SWIPE_VELOCITY && 
-                         totalTime <= this.FAST_SWIPE_TIME_LIMIT;
-      
+
+      const isFastSwipe =
+        this.touchVelocity >= this.FAST_SWIPE_VELOCITY &&
+        totalTime <= this.FAST_SWIPE_TIME_LIMIT;
+
       if (isFastSwipe) {
         this.touchProcessed = true;
         this.isProcessingGesture = true;
@@ -162,7 +199,7 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
         this.changeSong(deltaY > 0 ? 1 : -1);
         this.touchStartY = currentY;
         this.touchStartTime = now;
-        
+
         setTimeout(() => {
           this.isProcessingGesture = false;
         }, 100);
@@ -179,7 +216,7 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
     this.lastTouchTime = 0;
     this.touchVelocity = 0;
     this.touchProcessed = false;
-    
+
     if (this.isProcessingGesture) {
       setTimeout(() => {
         this.isProcessingGesture = false;
@@ -194,7 +231,7 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
     this.lastTouchTime = 0;
     this.touchVelocity = 0;
     this.touchProcessed = false;
-    
+
     if (this.isProcessingGesture) {
       setTimeout(() => {
         this.isProcessingGesture = false;
@@ -204,22 +241,22 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
 
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
-    if (this.isProcessingGesture) return;
-    
+    if (this.isProcessingGesture || this.isAnimating) return;
+
     let direction = 0;
-    
+
     if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
       direction = 1;
     } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
       direction = -1;
     }
-    
+
     if (direction !== 0) {
       event.preventDefault();
       this.isProcessingGesture = true;
-      
+
       this.changeSong(direction);
-      
+
       setTimeout(() => {
         this.isProcessingGesture = false;
       }, this.GESTURE_LOCK_TIME);
@@ -231,9 +268,17 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
     (event.currentTarget as HTMLElement)?.focus();
   }
 
+  onAnimationStart() {
+    this.isAnimating = true;
+  }
+
+  onAnimationDone() {
+    this.isAnimating = false;
+  }
+
   private changeSong(direction: number) {
     const newIndex = this.currSong + direction;
-    
+
     if (newIndex >= 0 && newIndex < this.songs.length) {
       this.currSong = newIndex;
     } else if (newIndex < 0) {
@@ -241,6 +286,9 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
     } else {
       this.currSong = 0;
     }
+
+    this.animationCycle++;
+    this.songKey++;
 
     this.extractColorsFromCurrentSong();
   }
@@ -260,27 +308,27 @@ export class SongCardComponent implements OnDestroy, AfterViewInit {
         const dominantColor = this.colorThief.getColor(img);
         const palette = this.colorThief.getPalette(img, 5);
 
-        const colors = palette.map((rgb: number[]) => 
+        const colors = palette.map((rgb: number[]) =>
           this.rgbToHex(rgb[0], rgb[1], rgb[2])
         );
 
         this.colorsChanged.emit(colors);
       } catch (error) {
-        console.error("Could not extract colors:", error);
-        this.colorsChanged.emit(["#121212", "#1a1a1a", "#2a2a2a"]);
+        console.error('Could not extract colors:', error);
+        this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
       }
     };
 
     img.onerror = () => {
-      console.error("Could not load album art image");
-      this.colorsChanged.emit(["#121212", "#1a1a1a", "#2a2a2a"]);
+      console.error('Could not load album art image');
+      this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
     };
 
     img.src = currentSong.albumArt;
   }
 
   private rgbToHex(r: number, g: number, b: number): string {
-    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
 
   ngOnDestroy() {

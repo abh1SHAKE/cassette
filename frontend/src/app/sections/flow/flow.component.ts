@@ -1,4 +1,10 @@
-import { Component, OnDestroy, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  AfterViewInit,
+  ElementRef,
+  ViewChild,
+} from '@angular/core';
 import { SongCardComponent } from '../../components/song-card/song-card.component';
 
 declare global {
@@ -15,8 +21,9 @@ declare global {
   styleUrl: './flow.component.scss',
 })
 export class FlowComponent implements OnDestroy, AfterViewInit {
-  @ViewChild('liquidEtherContainer', { static: false }) containerRef!: ElementRef<HTMLDivElement>;
-  
+  @ViewChild('liquidEtherContainer', { static: false })
+  containerRef!: ElementRef<HTMLDivElement>;
+
   private liquidEtherInstance: any = null;
   private currentColors: string[] = ['#5227FF', '#FF9FFC', '#B19EEF'];
   private initAttempts = 0;
@@ -28,7 +35,6 @@ export class FlowComponent implements OnDestroy, AfterViewInit {
 
   private waitForDependencies() {
     if (!window.THREE) {
-      console.log('Waiting for Three.js to load...');
       if (this.initAttempts < this.maxAttempts) {
         this.initAttempts++;
         setTimeout(() => this.waitForDependencies(), 100);
@@ -38,128 +44,128 @@ export class FlowComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
-    this.loadLiquidEtherScript().then(() => {
-      setTimeout(() => this.initLiquidEther(), 100);
-    }).catch(err => {
-      console.error('Failed to load LiquidEther script:', err);
-    });
+    this.loadLiquidEtherScript()
+      .then(() => {
+        setTimeout(() => this.initLiquidEther(), 100);
+      })
+      .catch((err) => {
+        console.error('Failed to load LiquidEther script:', err);
+      });
   }
 
   private loadLiquidEtherScript(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (window.createLiquidEther) {
-        console.log('LiquidEther already loaded');
         resolve();
         return;
       }
 
-      const existingScript = document.querySelector('script[src*="liquid-ether.js"]');
+      const existingScript = document.querySelector(
+        'script[src*="liquid-ether.js"]'
+      );
       if (existingScript) {
         existingScript.addEventListener('load', () => resolve());
-        existingScript.addEventListener('error', () => reject(new Error('Script failed to load')));
+        existingScript.addEventListener('error', () =>
+          reject(new Error('Script failed to load'))
+        );
         return;
       }
 
       const script = document.createElement('script');
       script.src = 'assets/liquid-ether.js';
       script.async = true;
-      
+
       script.onload = () => {
-        console.log('LiquidEther script loaded successfully');
         resolve();
       };
-      
+
       script.onerror = (error) => {
         console.error('Failed to load LiquidEther script:', error);
         reject(new Error('Script load error'));
       };
-      
+
       document.head.appendChild(script);
     });
   }
 
   private initLiquidEther() {
-  if (!this.containerRef?.nativeElement) {
-    console.error('Container element not found');
-    return;
-  }
-
-  if (!window.THREE) {
-    console.error('Three.js not loaded');
-    return;
-  }
-
-  if (!window.createLiquidEther) {
-    console.error('createLiquidEther function not found');
-    return;
-  }
-
-  const container = this.containerRef.nativeElement;
-
-  if (!document.body.contains(container)) {
-    console.warn('Container not yet attached to DOM, retrying...');
-    setTimeout(() => this.initLiquidEther(), 200);
-    return;
-  }
-
-  if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-    console.warn('Container has no dimensions, retrying...');
-    setTimeout(() => this.initLiquidEther(), 200);
-    return;
-  }
-
-  if (this.liquidEtherInstance?.dispose) {
-    console.log('Disposing previous LiquidEther instance...');
-    try {
-      this.liquidEtherInstance.dispose();
-    } catch (err) {
-      console.warn('Error disposing old instance:', err);
-    }
-    this.liquidEtherInstance = null;
-  }
-
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl) {
-      console.error('WebGL context creation failed. Check GPU/driver.');
+    if (!this.containerRef?.nativeElement) {
+      console.error('Container element not found');
       return;
     }
-  } catch (err) {
-    console.error('WebGL initialization test failed:', err);
-    return;
-  }
 
-  try {
-    console.log('Initializing LiquidEther with container:', container);
-    this.liquidEtherInstance = window.createLiquidEther(container, {
-      colors: this.currentColors,
-      mouseForce: 20,
-      cursorSize: 100,
-      isViscous: false,
-      viscous: 80,
-      iterationsViscous: 32,
-      iterationsPoisson: 32,
-      resolution: 0.5,
-      isBounce: false,
-      autoDemo: true,
-      autoSpeed: 0.5,
-      autoIntensity: 2.2,
-      takeoverDuration: 0.25,
-      autoResumeDelay: 1000,
-      autoRampDuration: 0.6,
-      dt: 0.014,
-      BFECC: true
-    });
+    if (!window.THREE) {
+      console.error('Three.js not loaded');
+      return;
+    }
 
-    console.log('LiquidEther initialized successfully');
-  } catch (error) {
-    console.error('Error initializing LiquidEther:', error);
+    if (!window.createLiquidEther) {
+      console.error('createLiquidEther function not found');
+      return;
+    }
+
+    const container = this.containerRef.nativeElement;
+
+    if (!document.body.contains(container)) {
+      console.warn('Container not yet attached to DOM, retrying...');
+      setTimeout(() => this.initLiquidEther(), 200);
+      return;
+    }
+
+    if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+      console.warn('Container has no dimensions, retrying...');
+      setTimeout(() => this.initLiquidEther(), 200);
+      return;
+    }
+
+    if (this.liquidEtherInstance?.dispose) {
+      try {
+        this.liquidEtherInstance.dispose();
+      } catch (err) {
+        console.warn('Error disposing old instance:', err);
+      }
+      this.liquidEtherInstance = null;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      const gl =
+        canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        console.error('WebGL context creation failed. Check GPU/driver.');
+        return;
+      }
+    } catch (err) {
+      console.error('WebGL initialization test failed:', err);
+      return;
+    }
+
+    try {
+      this.liquidEtherInstance = window.createLiquidEther(container, {
+        colors: this.currentColors,
+        mouseForce: 20,
+        cursorSize: 100,
+        isViscous: false,
+        viscous: 80,
+        iterationsViscous: 32,
+        iterationsPoisson: 32,
+        resolution: 0.5,
+        isBounce: false,
+        autoDemo: true,
+        autoSpeed: 0.5,
+        autoIntensity: 2.2,
+        takeoverDuration: 0.25,
+        autoResumeDelay: 1000,
+        autoRampDuration: 0.6,
+        dt: 0.014,
+        BFECC: true,
+      });
+    } catch (error) {
+      console.error('Error initializing LiquidEther:', error);
+    }
   }
-}
 
   onColorsChanged(colors: string[]) {
-    console.log('Colors changed:', colors);
     if (colors && colors.length >= 3) {
       this.currentColors = colors;
       if (this.liquidEtherInstance?.updateColors) {
@@ -169,7 +175,6 @@ export class FlowComponent implements OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy() {
-    console.log('Destroying FlowComponent');
     if (this.liquidEtherInstance?.dispose) {
       try {
         this.liquidEtherInstance.dispose();
