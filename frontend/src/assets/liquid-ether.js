@@ -6,19 +6,19 @@
   window.createLiquidEther = function(container, options = {}) {
     const {
       colors = ['#5227FF', '#FF9FFC', '#B19EEF'],
-      mouseForce = 20,
-      cursorSize = 100,
+      mouseForce = 0,
+      cursorSize = 0,
       isViscous = false,
       viscous = 30,
       iterationsViscous = 32,
       iterationsPoisson = 32,
-      resolution = 1,
+      resolution = 2,
       isBounce = false,
       autoDemo = true,
       autoSpeed = 0.01,
       autoIntensity = 0.8,
-      takeoverDuration = 0.8,
-      autoResumeDelay = 1000,
+      takeoverDuration = 0,
+      autoResumeDelay = 0,
       autoRampDuration = 0.6,
       dt = 0.007,
       BFECC = true
@@ -227,7 +227,6 @@
       `
     };
 
-    // Common class for shared state
     class Common {
       constructor() {
         this.width = 0;
@@ -279,144 +278,38 @@
 
     class Mouse {
       constructor() {
-        this.mouseMoved = false;
         this.coords = new THREE.Vector2();
         this.coords_old = new THREE.Vector2();
         this.diff = new THREE.Vector2();
-        this.timer = null;
-        this.container = null;
-        this.isHoverInside = false;
-        this.hasUserControl = false;
-        this.isAutoActive = false;
+        this.isAutoActive = true;  // Always in auto mode
         this.autoIntensity = autoIntensity;
-        this.takeoverActive = false;
-        this.takeoverStartTime = 0;
-        this.takeoverDuration = takeoverDuration;
-        this.takeoverFrom = new THREE.Vector2();
-        this.takeoverTo = new THREE.Vector2();
-        this.onInteract = null;
       }
 
       init(container) {
-        this.container = container;
-        this._onMouseMove = this.onDocumentMouseMove.bind(this);
-        this._onTouchStart = this.onDocumentTouchStart.bind(this);
-        this._onTouchMove = this.onDocumentTouchMove.bind(this);
-        this._onMouseEnter = this.onMouseEnter.bind(this);
-        this._onMouseLeave = this.onMouseLeave.bind(this);
-        this._onTouchEnd = this.onTouchEnd.bind(this);
-        
-        container.addEventListener('mousemove', this._onMouseMove);
-        container.addEventListener('touchstart', this._onTouchStart, { passive: true });
-        container.addEventListener('touchmove', this._onTouchMove, { passive: true });
-        container.addEventListener('mouseenter', this._onMouseEnter);
-        container.addEventListener('mouseleave', this._onMouseLeave);
-        container.addEventListener('touchend', this._onTouchEnd);
+        // No mouse event listeners needed
       }
 
       dispose() {
-        if (!this.container) return;
-        this.container.removeEventListener('mousemove', this._onMouseMove);
-        this.container.removeEventListener('touchstart', this._onTouchStart);
-        this.container.removeEventListener('touchmove', this._onTouchMove);
-        this.container.removeEventListener('mouseenter', this._onMouseEnter);
-        this.container.removeEventListener('mouseleave', this._onMouseLeave);
-        this.container.removeEventListener('touchend', this._onTouchEnd);
-      }
-
-      setCoords(x, y) {
-        if (!this.container) return;
-        if (this.timer) window.clearTimeout(this.timer);
-        const rect = this.container.getBoundingClientRect();
-        const nx = (x - rect.left) / rect.width;
-        const ny = (y - rect.top) / rect.height;
-        this.coords.set(nx * 2 - 1, -(ny * 2 - 1));
-        this.mouseMoved = true;
-        this.timer = window.setTimeout(() => {
-          this.mouseMoved = false;
-        }, 100);
+        // Nothing to dispose
       }
 
       setNormalized(nx, ny) {
         this.coords.set(nx, ny);
-        this.mouseMoved = true;
-      }
-
-      onDocumentMouseMove(event) {
-        if (this.onInteract) this.onInteract();
-        if (this.isAutoActive && !this.hasUserControl && !this.takeoverActive) {
-          if (!this.container) return;
-          const rect = this.container.getBoundingClientRect();
-          const nx = (event.clientX - rect.left) / rect.width;
-          const ny = (event.clientY - rect.top) / rect.height;
-          this.takeoverFrom.copy(this.coords);
-          this.takeoverTo.set(nx * 2 - 1, -(ny * 2 - 1));
-          this.takeoverStartTime = performance.now();
-          this.takeoverActive = true;
-          this.hasUserControl = true;
-          this.isAutoActive = false;
-          return;
-        }
-        this.setCoords(event.clientX, event.clientY);
-        this.hasUserControl = true;
-      }
-
-      onDocumentTouchStart(event) {
-        if (event.touches.length === 1) {
-          const t = event.touches[0];
-          if (this.onInteract) this.onInteract();
-          this.setCoords(t.pageX, t.pageY);
-          this.hasUserControl = true;
-        }
-      }
-
-      onDocumentTouchMove(event) {
-        if (event.touches.length === 1) {
-          const t = event.touches[0];
-          if (this.onInteract) this.onInteract();
-          this.setCoords(t.pageX, t.pageY);
-        }
-      }
-
-      onTouchEnd() {
-        this.isHoverInside = false;
-      }
-
-      onMouseEnter() {
-        this.isHoverInside = true;
-      }
-
-      onMouseLeave() {
-        this.isHoverInside = false;
       }
 
       update() {
-        if (this.takeoverActive) {
-          const t = (performance.now() - this.takeoverStartTime) / (this.takeoverDuration * 1000);
-          if (t >= 1) {
-            this.takeoverActive = false;
-            this.coords.copy(this.takeoverTo);
-            this.coords_old.copy(this.coords);
-            this.diff.set(0, 0);
-          } else {
-            const k = t * t * (3 - 2 * t);
-            this.coords.copy(this.takeoverFrom).lerp(this.takeoverTo, k);
-          }
-        }
         this.diff.subVectors(this.coords, this.coords_old);
         this.coords_old.copy(this.coords);
         if (this.coords_old.x === 0 && this.coords_old.y === 0) this.diff.set(0, 0);
-        if (this.isAutoActive && !this.takeoverActive) this.diff.multiplyScalar(this.autoIntensity);
+        this.diff.multiplyScalar(this.autoIntensity);
       }
     }
 
     class AutoDriver {
-      constructor(mouse, manager) {
+      constructor(mouse) {
         this.mouse = mouse;
-        this.manager = manager;
         this.enabled = autoDemo;
         this.speed = autoSpeed;
-        this.resumeDelay = autoResumeDelay;
         this.rampDurationMs = autoRampDuration * 1000;
         this.active = true;
         this.current = new THREE.Vector2(0, 0);
@@ -435,36 +328,12 @@
         );
       }
 
-      forceStop() {
-        this.active = false;
-        this.mouse.isAutoActive = false;
-      }
-
       update() {
-        if (!this.enabled) return;
-        
-        const now = performance.now();
-        const idle = now - this.manager.lastUserInteraction;
-        
-        if (idle < this.resumeDelay) {
-          if (this.active) this.forceStop();
-          return;
-        }
-        
-        if (this.mouse.isHoverInside && this.mouse.hasUserControl) {
-          if (this.active) this.forceStop();
-          return;
-        }
-        
-        if (!this.active) {
-          this.active = true;
-          this.current.copy(this.mouse.coords);
-          this.lastTime = now;
-          this.activationTime = now;
-        }
+        if (!this.enabled || !this.active) return;
         
         this.mouse.isAutoActive = true;
         
+        const now = performance.now();
         let dtSec = (now - this.lastTime) / 1000;
         this.lastTime = now;
         if (dtSec > 0.2) dtSec = 0.016;
@@ -941,19 +810,13 @@
 
     class WebGLManager {
       constructor() {
-        this.lastUserInteraction = performance.now();
         this.running = false;
         this.rafId = null;
         
         common.init(container);
         mouse.init(container);
         
-        mouse.onInteract = () => {
-          this.lastUserInteraction = performance.now();
-          if (autoDriver) autoDriver.forceStop();
-        };
-        
-        autoDriver = new AutoDriver(mouse, this);
+        autoDriver = new AutoDriver(mouse);
         
         container.prepend(common.renderer.domElement);
         this.output = new Output();
