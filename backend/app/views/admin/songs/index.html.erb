@@ -1,0 +1,28 @@
+<h1>Songs Management</h1>
+<%= link_to 'Add New Song', new_admin_song_path, class: 'btn' %>
+
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Owner</th>
+      <th>Artists</th>
+      <th>Genres</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @songs.each do |song| %>
+      <tr>
+        <td><%= song.title %></td>
+        <td><%= song.owner %></td>
+        <td><%= song.artists.join(', ') %></td>
+        <td><%= song.genres.join(', ') %></td>
+        <td>
+          <%= link_to 'Edit', edit_admin_song_path(song), class: 'btn' %>
+          <%= button_to 'Delete', admin_song_path(song), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn' %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
