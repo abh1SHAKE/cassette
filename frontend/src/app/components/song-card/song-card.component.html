@@ -28,14 +28,14 @@
             <div class="text-sm font-medium">{{ songs[currSong].owner }}</div>
             <div class="flex flex-row gap-[8px]">
                 @for (genre of songs[currSong].genres; track $index) {
-                <div class="bg-[#383838] px-[8px] py-[2px] text-sm font-small rounded-xl">{{ genre }}</div>
+                <div class="bg-[#383838] px-[8px] py-[2px] text-sm font-small rounded-xl">{{ '#' + genre }}</div>
                 }
             </div>
         </div>
     </div>
     <div class="scroll-container flex flex-col">
         <div class="p-[24px] mobile:p-[12px] max-h-[400px] max-w-[400px]">
-            <img [src]="songs[currSong].albumArt" alt="album art" class="object-contain rounded" />
+            <img [src]="songs[currSong].album_art" alt="album art" class="object-contain rounded" />
         </div>
     </div>
 </div>
