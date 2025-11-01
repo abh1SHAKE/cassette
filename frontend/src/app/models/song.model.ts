@@ -6,6 +6,6 @@ export interface Song {
     album_art: string;
     genres: string[];
     video_preview?: string;
-    audio_preview?: string;
-    audio_duration?: number;
+    audio_preview: string;
+    audio_duration: number;
 }

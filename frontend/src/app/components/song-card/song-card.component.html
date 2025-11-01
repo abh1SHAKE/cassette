@@ -1,41 +1,74 @@
-<div
-    class="card flex mobile:flex-col-reverse flex-row gap-[60px] mobile:gap-[20px] bg-transparent text-[#c4c4c4] rounded-[12px] backdrop-blur-2xl">
-    <div class="flex flex-col justify-between w-[400px] mobile:w-full mobile:p-[12px] p-[24px] gap-[16px]">
-        <div class="w-full mobile:hidden font-gabarito text-md font-bold">cassette.</div>
-        <div class="font-poppins flex flex-col pl-[16px] mobile:pl-0 gap-[8px]">
-            <div class="overflow-hidden relative">
-                @if (songKey % 2 === 0) {
-                <div [@slideUp] (@slideUp.start)="onAnimationStart()" (@slideUp.done)="onAnimationDone()"
-                    class="text-3xl mobile:text-xl font-bold text-balance line-clamp-3">
-                    {{ songs[currSong].title }}
+<div class="card-container relative">
+    @if (isLoading) {
+    <div class="flex items-center justify-center min-h-[400px]">
+        <div class="flex flex-col items-center gap-4">
+            <div class="loader w-6 h-6 border-2 border-[#383838] border-t-[#c4c4c4] rounded-full animate-spin"></div>
+        </div>
+    </div>
+    }
+
+    @else if (error) {
+    <div class="flex items-center justify-center min-h-[400px]">
+        <div class="flex flex-col items-center gap-4 text-center px-6">
+            <p class="text-red-400 font-poppins text-sm">{{ error }}</p>
+        </div>
+    </div>
+    }
+
+    @else if (!hasInteracted && songs.length > 0) {
+        <div 
+            [@fadeIn]
+            class="shiny-text font-poppins cursor-pointer p-4"
+        >
+            Click here to get started
+        </div>
+    }
+
+    @else if (songs.length > 0) {
+    <div [@fadeIn]
+        class="card flex mobile:flex-col-reverse flex-row gap-[60px] mobile:gap-[20px] bg-transparent text-[#c4c4c4] rounded-[12px] backdrop-blur-2xl">
+        <div class="flex flex-col justify-between w-[400px] mobile:w-full mobile:p-[12px] p-[24px] gap-[16px]">
+            <div class="w-full mobile:hidden font-gabarito text-md font-bold">cassette.</div>
+            <div class="font-poppins flex flex-col pl-[16px] mobile:pl-0 gap-[8px]">
+                <div class="overflow-hidden relative">
+                    @if (songKey % 2 === 0) {
+                    <div [@slideUp] (@slideUp.start)="onAnimationStart()" (@slideUp.done)="onAnimationDone()"
+                        class="text-3xl mobile:text-xl font-bold text-balance line-clamp-3">
+                        {{ songs[currSong].title }}
+                    </div>
+                    } @else {
+                    <div [@slideUp] (@slideUp.start)="onAnimationStart()" (@slideUp.done)="onAnimationDone()"
+                        class="text-3xl mobile:text-xl font-bold text-balance line-clamp-3">
+                        {{ songs[currSong].title }}
+                    </div>
+                    }
                 </div>
-                } @else {
-                <div [@slideUp] (@slideUp.start)="onAnimationStart()" (@slideUp.done)="onAnimationDone()"
-                    class="text-3xl mobile:text-xl font-bold text-balance line-clamp-3">
-                    {{ songs[currSong].title }}
+                <div class="text-sm font-medium text-[#b3b3b3]">
+                    @for (artist of songs[currSong].artists; track $index) {
+                        {{ artist }}@if ($index < songs[currSong].artists.length - 1) {,  }
+                    }
                 </div>
-                }
+                <div class="progress-bar max-w-[200px] relative pt-[20px]">
+                    <div class="foreground absolute bg-[#c4c4c4] h-[4px] rounded-lg transition-all duration-100"
+                        [style.width.%]="audioProgress"></div>
+                    <div class="background bg-[#383838] h-[4px] w-full rounded-lg"></div>
+                </div>
             </div>
-            <div class="text-sm font-medium text-[#b3b3b3]">
-                {{ songs[currSong].artists }}
-            </div>
-            <div class="progress-bar max-w-[200px] relative pt-[20px]">
-                <div class="foreground absolute bg-[#c4c4c4] w-[50%] h-[4px] rounded-lg"></div>
-                <div class="background bg-[#383838] h-[4px] w-full rounded-lg"></div>
+            <div class="flex flex-col font-poppins w-full gap-[8px]">
+                <div class="text-sm font-medium">{{ songs[currSong].owner }}</div>
+                <div class="flex flex-row gap-[8px] flex-wrap">
+                    @for (genre of songs[currSong].genres; track $index) {
+                    <div class="bg-[#272727] px-[8px] py-[2px] text-sm font-small rounded-xl">{{ '#' + genre }}</div>
+                    }
+                </div>
             </div>
         </div>
-        <div class="flex flex-col font-poppins w-full gap-[8px]">
-            <div class="text-sm font-medium">{{ songs[currSong].owner }}</div>
-            <div class="flex flex-row gap-[8px]">
-                @for (genre of songs[currSong].genres; track $index) {
-                <div class="bg-[#383838] px-[8px] py-[2px] text-sm font-small rounded-xl">{{ '#' + genre }}</div>
-                }
+        <div class="scroll-container flex flex-col">
+            <div class="p-[24px] mobile:p-[12px] max-h-[400px] max-w-[400px] relative">
+                <img [src]="songs[currSong].album_art" alt="album art"
+                    class="object-contain rounded"/>
             </div>
         </div>
     </div>
-    <div class="scroll-container flex flex-col">
-        <div class="p-[24px] mobile:p-[12px] max-h-[400px] max-w-[400px]">
-            <img [src]="songs[currSong].album_art" alt="album art" class="object-contain rounded" />
-        </div>
-    </div>
+    }
 </div>

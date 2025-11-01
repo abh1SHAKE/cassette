@@ -12,6 +12,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import { SongService } from '../../services/song.service';
 import { Song } from '../../models/song.model';
 import { CommonModule } from '@angular/common';
+import { Howl } from 'howler';
 
 @Component({
   selector: 'app-song-card',
@@ -36,6 +37,12 @@ import { CommonModule } from '@angular/common';
         ),
       ]),
     ]),
+    trigger('fadeIn', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('300ms ease-in', style({ opacity: 1 })),
+      ]),
+    ]),
   ],
 })
 export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -46,9 +53,13 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   songKey = 0;
   isAnimating = false;
   isLoading = true;
+  hasInteracted = false;
   error: string | null = null;
+  audioProgress = 0;
 
   private colorThief: ColorThief;
+  private currentHowl: Howl | null = null;
+  private progressInterval: any = null;
   songs: Song[] = [];
 
   constructor(
@@ -75,9 +86,8 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.songService.getSongs().subscribe({
       next: (songs) => {
         this.songs = songs;
-        console.log("SONGS: ", this.songs)
         this.isLoading = false;
-        
+
         if (this.songs.length > 0) {
           this.extractColorsFromCurrentSong();
         }
@@ -86,10 +96,62 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
         console.error('Error loading songs:', err);
         this.error = 'Failed to load songs. Please try again later.';
         this.isLoading = false;
-        
+
         this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
-      }
+      },
     });
+  }
+
+  private initAudio() {
+    if (this.songs.length === 0 || !this.songs[this.currSong]) return;
+
+    const song = this.songs[this.currSong];
+
+    if (this.currentHowl) {
+      this.currentHowl.fade(this.currentHowl.volume(), 0, 300);
+      setTimeout(() => {
+        this.currentHowl?.unload();
+        this.currentHowl = null;
+        this.loadNewAudio(song);
+      }, 300);
+    } else {
+      this.loadNewAudio(song);
+    }
+  }
+
+  private loadNewAudio(song: Song) {
+    this.currentHowl = new Howl({
+      src: [song.audio_preview],
+      html5: true,
+      loop: true,
+      volume: 0,
+      onload: () => {
+        this.currentHowl?.fade(0, 0.7, 500);
+        this.startProgressTracking();
+      },
+      onloaderror: (id, error) => {
+        console.error('Audio load error:', error);
+      },
+      onplayerror: (id, error) => {
+        console.error('Audio play error:', error);
+      },
+    });
+
+    this.currentHowl.play();
+  }
+
+  private startProgressTracking() {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+    }
+
+    this.progressInterval = setInterval(() => {
+      if (this.currentHowl && this.currentHowl.playing()) {
+        const seek = this.currentHowl.seek() as number;
+        const duration = this.currentHowl.duration();
+        this.audioProgress = (seek / duration) * 100;
+      }
+    }, 100);
   }
 
   private touchStartY: number | null = null;
@@ -113,9 +175,6 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   @HostListener('wheel', ['$event'])
   onWheel(event: WheelEvent) {
     event.preventDefault();
-
-    if (this.isProcessingWheel || this.isAnimating || this.songs.length === 0) return;
-
     this.wheelDeltaAccumulator += Math.abs(event.deltaY);
 
     if (this.wheelTimeout) {
@@ -139,8 +198,6 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @HostListener('touchstart', ['$event'])
   onTouchStart(event: TouchEvent) {
-    if (this.isProcessingGesture || this.isAnimating || this.songs.length === 0) return;
-
     const now = Date.now();
     this.touchStartY = event.touches[0].clientY;
     this.touchStartTime = now;
@@ -228,8 +285,6 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
-    if (this.isProcessingGesture || this.isAnimating || this.songs.length === 0) return;
-
     let direction = 0;
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
@@ -252,6 +307,10 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @HostListener('click', ['$event'])
   onClick(event: MouseEvent) {
+    if (!this.hasInteracted) {
+      this.hasInteracted = true;
+      this.initAudio();
+    }
     (event.currentTarget as HTMLElement)?.focus();
   }
 
@@ -278,6 +337,10 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.songKey++;
 
     this.extractColorsFromCurrentSong();
+    
+    if (this.hasInteracted) {
+      this.initAudio();
+    }
   }
 
   private extractColorsFromCurrentSong() {
@@ -321,6 +384,12 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy() {
     if (this.wheelTimeout) {
       clearTimeout(this.wheelTimeout);
+    }
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+    }
+    if (this.currentHowl) {
+      this.currentHowl.unload();
     }
   }
 }
