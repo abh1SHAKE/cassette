@@ -16,12 +16,9 @@
     }
 
     @else if (!hasInteracted && songs.length > 0) {
-        <div 
-            [@fadeIn]
-            class="shiny-text font-poppins cursor-pointer p-4"
-        >
-            Click here to get started
-        </div>
+    <div [@fadeIn] class="shiny-text font-poppins cursor-pointer p-4">
+        Click here to get started
+    </div>
     }
 
     @else if (songs.length > 0) {
@@ -43,32 +40,31 @@
                     </div>
                     }
                 </div>
-                <div class="text-sm font-medium text-[#b3b3b3]">
+                <div class="text-sm font-medium text-[#b3b3b3]" [@contentFade]="contentState">
                     @for (artist of songs[currSong].artists; track $index) {
-                        {{ artist }}@if ($index < songs[currSong].artists.length - 1) {,  }
-                    }
+                    {{ artist }}@if ($index < songs[currSong].artists.length - 1) {, } } </div>
+                        <div class="progress-bar max-w-[200px] relative pt-[20px]">
+                            <div class="foreground absolute bg-[#c4c4c4] h-[4px] rounded-lg transition-all duration-100"
+                                [style.width.%]="audioProgress"></div>
+                            <div class="background bg-[#383838] h-[4px] w-full rounded-lg"></div>
+                        </div>
                 </div>
-                <div class="progress-bar max-w-[200px] relative pt-[20px]">
-                    <div class="foreground absolute bg-[#c4c4c4] h-[4px] rounded-lg transition-all duration-100"
-                        [style.width.%]="audioProgress"></div>
-                    <div class="background bg-[#383838] h-[4px] w-full rounded-lg"></div>
+                <div class="flex flex-col font-poppins w-full gap-[8px]" [@contentFade]="contentState">
+                    <div class="text-sm font-medium">{{ songs[currSong].owner }}</div>
+                    <div class="flex flex-row gap-[8px] flex-wrap">
+                        @for (genre of songs[currSong].genres; track $index) {
+                        <div class="bg-[#272727] px-[8px] py-[2px] text-sm font-small rounded-xl">{{ '#' + genre }}
+                        </div>
+                        }
+                    </div>
                 </div>
             </div>
-            <div class="flex flex-col font-poppins w-full gap-[8px]">
-                <div class="text-sm font-medium">{{ songs[currSong].owner }}</div>
-                <div class="flex flex-row gap-[8px] flex-wrap">
-                    @for (genre of songs[currSong].genres; track $index) {
-                    <div class="bg-[#272727] px-[8px] py-[2px] text-sm font-small rounded-xl">{{ '#' + genre }}</div>
-                    }
+            <div class="scroll-container flex flex-col">
+                <div class="p-[24px] mobile:p-[12px] max-h-[400px] max-w-[400px] relative">
+                    <img [src]="songs[currSong].album_art" alt="album art"
+                        class="object-contain rounded transition-opacity duration-300" [@contentFade]="contentState" />
                 </div>
             </div>
         </div>
-        <div class="scroll-container flex flex-col">
-            <div class="p-[24px] mobile:p-[12px] max-h-[400px] max-w-[400px] relative">
-                <img [src]="songs[currSong].album_art" alt="album art"
-                    class="object-contain rounded"/>
-            </div>
-        </div>
+        }
     </div>
-    }
-</div>

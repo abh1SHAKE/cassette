@@ -8,7 +8,13 @@ import {
   output,
 } from '@angular/core';
 import ColorThief from 'colorthief';
-import { trigger, transition, style, animate } from '@angular/animations';
+import {
+  trigger,
+  transition,
+  style,
+  animate,
+  state,
+} from '@angular/animations';
 import { SongService } from '../../services/song.service';
 import { Song } from '../../models/song.model';
 import { CommonModule } from '@angular/common';
@@ -43,6 +49,11 @@ import { Howl } from 'howler';
         animate('300ms ease-in', style({ opacity: 1 })),
       ]),
     ]),
+    trigger('contentFade', [
+      state('visible', style({ opacity: 1 })),
+      state('hidden', style({ opacity: 0 })),
+      transition('visible <=> hidden', animate('300ms ease-in-out')),
+    ]),
   ],
 })
 export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -56,10 +67,12 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   hasInteracted = false;
   error: string | null = null;
   audioProgress = 0;
+  contentState = 'visible';
 
   private colorThief: ColorThief;
   private currentHowl: Howl | null = null;
   private progressInterval: any = null;
+  private pendingSongIndex: number | null = null;
   songs: Song[] = [];
 
   constructor(
@@ -171,6 +184,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly GESTURE_LOCK_TIME = 400;
   private readonly FAST_SWIPE_VELOCITY = 0.5;
   private readonly FAST_SWIPE_TIME_LIMIT = 300;
+  private readonly TRANSITION_DURATION = 300;
 
   @HostListener('wheel', ['$event'])
   onWheel(event: WheelEvent) {
@@ -183,7 +197,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     if (this.wheelDeltaAccumulator >= this.WHEEL_THRESHOLD) {
       this.isProcessingWheel = true;
-      this.changeSong(event.deltaY > 0 ? 1 : -1);
+      this.changeSongSmooth(event.deltaY > 0 ? 1 : -1);
 
       this.wheelDeltaAccumulator = 0;
       setTimeout(() => {
@@ -237,10 +251,10 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
       if (isFastSwipe) {
         this.touchProcessed = true;
         this.isProcessingGesture = true;
-        this.changeSong(deltaY > 0 ? 1 : -1);
+        this.changeSongSmooth(deltaY > 0 ? 1 : -1);
       } else {
         this.isProcessingGesture = true;
-        this.changeSong(deltaY > 0 ? 1 : -1);
+        this.changeSongSmooth(deltaY > 0 ? 1 : -1);
         this.touchStartY = currentY;
         this.touchStartTime = now;
 
@@ -297,7 +311,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
       event.preventDefault();
       this.isProcessingGesture = true;
 
-      this.changeSong(direction);
+      this.changeSongSmooth(direction);
 
       setTimeout(() => {
         this.isProcessingGesture = false;
@@ -322,6 +336,51 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isAnimating = false;
   }
 
+  private changeSongSmooth(direction: number) {
+    if (this.pendingSongIndex !== null) return;
+
+    const newIndex = this.calculateNewIndex(direction);
+    this.pendingSongIndex = newIndex;
+
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
+    this.audioProgress = 0;
+
+    this.contentState = 'hidden';
+
+    setTimeout(() => {
+      this.currSong = this.pendingSongIndex!;
+      this.pendingSongIndex = null;
+
+      this.animationCycle++;
+      this.songKey++;
+
+      this.extractColorsFromCurrentSong();
+
+      if (this.hasInteracted) {
+        this.initAudio();
+      }
+      setTimeout(() => {
+        this.contentState = 'visible';
+      }, 50);
+    }, this.TRANSITION_DURATION);
+  }
+
+  private calculateNewIndex(direction: number): number {
+    const newIndex = this.currSong + direction;
+
+    if (newIndex >= 0 && newIndex < this.songs.length) {
+      return newIndex;
+    } else if (newIndex < 0) {
+      return this.songs.length - 1;
+    } else {
+      return 0;
+    }
+  }
+
+  // Original change song method
   private changeSong(direction: number) {
     const newIndex = this.currSong + direction;
 
@@ -337,7 +396,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.songKey++;
 
     this.extractColorsFromCurrentSong();
-    
+
     if (this.hasInteracted) {
       this.initAudio();
     }
