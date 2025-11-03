@@ -74,6 +74,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   private progressInterval: any = null;
   private pendingSongIndex: number | null = null;
   private imageLoadStates = new Map<number, boolean>();
+  private audioPreloadCache = new Map<number, Howl>();
   private readonly PRELOAD_COUNT = 5;
   songs: Song[] = [];
 
@@ -109,8 +110,9 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isLoading = false;
           this.extractColorsFromCurrentSong();
 
-          // Background: Preload next 5 images
+          // Background: Preload next 5 images and audio
           this.preloadNextImages(0);
+          this.preloadNextAudio(0);
         } else {
           this.isLoading = false;
         }
@@ -154,6 +156,42 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  private preloadAudio(index: number): Promise<void> {
+    // Check if already preloaded
+    if (this.audioPreloadCache.has(index)) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const song = this.songs[index];
+      
+      const howl = new Howl({
+        src: [song.audio_preview],
+        html5: true,
+        preload: true,
+        volume: 0,
+        onload: () => {
+          this.audioPreloadCache.set(index, howl);
+          resolve();
+        },
+        onloaderror: (id, error) => {
+          console.error(`Audio preload error for song ${index}:`, error);
+          resolve();
+        },
+      });
+    });
+  }
+
+  private preloadNextAudio(currentIndex: number) {
+    for (let i = 1; i <= this.PRELOAD_COUNT; i++) {
+      const nextIndex = (currentIndex + i) % this.songs.length;
+      
+      if (!this.audioPreloadCache.has(nextIndex)) {
+        this.preloadAudio(nextIndex);
+      }
+    }
+  }
+
   private initAudio() {
     if (this.songs.length === 0 || !this.songs[this.currSong]) return;
 
@@ -172,24 +210,39 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private loadNewAudio(song: Song) {
-    this.currentHowl = new Howl({
-      src: [song.audio_preview],
-      html5: true,
-      loop: true,
-      volume: 0,
-      onload: () => {
-        this.currentHowl?.fade(0, 0.7, 500);
-        this.startProgressTracking();
-      },
-      onloaderror: (id, error) => {
-        console.error('Audio load error:', error);
-      },
-      onplayerror: (id, error) => {
-        console.error('Audio play error:', error);
-      },
-    });
+    // Check if audio is already preloaded
+    const preloadedHowl = this.audioPreloadCache.get(this.currSong);
+    
+    if (preloadedHowl) {
+      // Use preloaded audio
+      this.currentHowl = preloadedHowl;
+      this.currentHowl.loop(true);
+      this.currentHowl.fade(0, 0.7, 500);
+      this.currentHowl.play();
+      this.startProgressTracking();
+      
+      // Remove from cache since we're now using it
+      this.audioPreloadCache.delete(this.currSong);
+    } else {
+      this.currentHowl = new Howl({
+        src: [song.audio_preview],
+        html5: true,
+        loop: true,
+        volume: 0,
+        onload: () => {
+          this.currentHowl?.fade(0, 0.7, 500);
+          this.startProgressTracking();
+        },
+        onloaderror: (id, error) => {
+          console.error('Audio load error:', error);
+        },
+        onplayerror: (id, error) => {
+          console.error('Audio play error:', error);
+        },
+      });
 
-    this.currentHowl.play();
+      this.currentHowl.play();
+    }
   }
 
   private startProgressTracking() {
@@ -405,8 +458,9 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
       // Ensure current image is loaded
       await this.preloadImage(this.currSong);
 
-      // Preload next batch of images in background
+      // Preload next batch of images and audio in background
       this.preloadNextImages(this.currSong);
+      this.preloadNextAudio(this.currSong);
 
       setTimeout(() => {
         this.contentState = 'visible';
@@ -489,5 +543,11 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.currentHowl) {
       this.currentHowl.unload();
     }
+    
+    // Clean up preloaded audio
+    this.audioPreloadCache.forEach((howl) => {
+      howl.unload();
+    });
+    this.audioPreloadCache.clear();
   }
 }
