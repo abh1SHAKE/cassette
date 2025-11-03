@@ -73,6 +73,8 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   private currentHowl: Howl | null = null;
   private progressInterval: any = null;
   private pendingSongIndex: number | null = null;
+  private imageLoadStates = new Map<number, boolean>();
+  private readonly PRELOAD_COUNT = 5;
   songs: Song[] = [];
 
   constructor(
@@ -92,17 +94,25 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     }, 100);
   }
 
-  private loadSongs() {
+  private async loadSongs() {
     this.isLoading = true;
     this.error = null;
 
     this.songService.getSongs().subscribe({
-      next: (songs) => {
+      next: async (songs) => {
         this.songs = songs;
-        this.isLoading = false;
 
         if (this.songs.length > 0) {
+          // Priority: Load current song image first
+          await this.preloadImage(0);
+          
+          this.isLoading = false;
           this.extractColorsFromCurrentSong();
+
+          // Background: Preload next 5 images
+          this.preloadNextImages(0);
+        } else {
+          this.isLoading = false;
         }
       },
       error: (err) => {
@@ -113,6 +123,35 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
       },
     });
+  }
+
+  private preloadImage(index: number): Promise<void> {
+    if (this.imageLoadStates.get(index)) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        this.imageLoadStates.set(index, true);
+        resolve();
+      };
+      img.onerror = () => {
+        this.imageLoadStates.set(index, true);
+        resolve();
+      };
+      img.src = this.songs[index].album_art;
+    });
+  }
+
+  private preloadNextImages(currentIndex: number) {
+    for (let i = 1; i <= this.PRELOAD_COUNT; i++) {
+      const nextIndex = (currentIndex + i) % this.songs.length;
+      
+      if (!this.imageLoadStates.get(nextIndex)) {
+        this.preloadImage(nextIndex);
+      }
+    }
   }
 
   private initAudio() {
@@ -336,7 +375,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isAnimating = false;
   }
 
-  private changeSongSmooth(direction: number) {
+  private async changeSongSmooth(direction: number) {
     if (this.pendingSongIndex !== null) return;
 
     const newIndex = this.calculateNewIndex(direction);
@@ -350,7 +389,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.contentState = 'hidden';
 
-    setTimeout(() => {
+    setTimeout(async () => {
       this.currSong = this.pendingSongIndex!;
       this.pendingSongIndex = null;
 
@@ -363,21 +402,16 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.initAudio();
       }
 
-      this.waitForImageLoad().then(() => {
-        setTimeout(() => {
-          this.contentState = 'visible';
-        }, 50);
-      });
-    }, this.TRANSITION_DURATION);
-  }
+      // Ensure current image is loaded
+      await this.preloadImage(this.currSong);
 
-  private waitForImageLoad(): Promise<void> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-      img.src = this.songs[this.currSong].album_art;
-    });
+      // Preload next batch of images in background
+      this.preloadNextImages(this.currSong);
+
+      setTimeout(() => {
+        this.contentState = 'visible';
+      }, 50);
+    }, this.TRANSITION_DURATION);
   }
 
   private calculateNewIndex(direction: number): number {
@@ -389,28 +423,6 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
       return this.songs.length - 1;
     } else {
       return 0;
-    }
-  }
-
-  // Original change song method
-  private changeSong(direction: number) {
-    const newIndex = this.currSong + direction;
-
-    if (newIndex >= 0 && newIndex < this.songs.length) {
-      this.currSong = newIndex;
-    } else if (newIndex < 0) {
-      this.currSong = this.songs.length - 1;
-    } else {
-      this.currSong = 0;
-    }
-
-    this.animationCycle++;
-    this.songKey++;
-
-    this.extractColorsFromCurrentSong();
-
-    if (this.hasInteracted) {
-      this.initAudio();
     }
   }
 
