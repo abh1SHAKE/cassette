@@ -50,6 +50,6 @@ class Api::V1::SongsController < ApplicationController
     def song_params
         params.require(:song).permit(:owner, :title, :album_art, :video_preview, :audio_preview, 
                                     :audio_duration, 
-                                    artists: [], genres: [])
+                                    artists: [], genres: [], colors: [])
     end
 end

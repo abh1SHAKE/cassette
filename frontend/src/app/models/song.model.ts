@@ -5,6 +5,7 @@ export interface Song {
     artists: string[];
     album_art: string;
     genres: string[];
+    colors: string[];
     video_preview?: string;
     audio_preview: string;
     audio_duration: number;

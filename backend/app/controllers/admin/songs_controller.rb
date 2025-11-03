@@ -4,7 +4,7 @@ class Admin::SongsController < ApplicationController
     end
 
     def create
-        processed_params = process_artists_and_genres(admin_song_params)
+        processed_params = process_artists_genres_and_colors(admin_song_params)
         processed_params.except!(:album_art_file, :video_preview_file, :audio_preview_file)
         @song = Song.new(processed_params)
 
@@ -27,8 +27,7 @@ class Admin::SongsController < ApplicationController
 
     def update
         @song = Song.find(params[:id])
-        processed_params = process_artists_and_genres(admin_song_params)
-
+        processed_params = process_artists_genres_and_colors(admin_song_params)
         processed_params.except!(:album_art_file, :video_preview_file, :audio_preview_file)
 
         upload_media_files(@song)
@@ -52,11 +51,11 @@ class Admin::SongsController < ApplicationController
         params.require(:song).permit(
             :owner, :title, :album_art, :video_preview, :audio_preview, :audio_duration,
             :album_art_file, :video_preview_file, :audio_preview_file,
-            :artists, :genres
+            :artists, :genres, :colors
         )
     end
 
-    def process_artists_and_genres(params)
+    def process_artists_genres_and_colors(params)
         data = params.to_h
 
         data[:artists] = 
@@ -68,7 +67,7 @@ class Admin::SongsController < ApplicationController
                     data[:artists].split(',').map(&:strip)
                 end
             else
-                []
+                data[:artists] || []
             end
 
         data[:genres] = 
@@ -80,7 +79,19 @@ class Admin::SongsController < ApplicationController
                     data[:genres].split(',').map(&:strip)
                 end
             else
-                []
+                data[:genres] || []
+            end
+
+        data[:colors] = 
+            if data[:colors].is_a?(String) && data[:colors].present?
+                begin
+                    parsed = JSON.parse(data[:colors])
+                    parsed.is_a?(Array) ? parsed : data[:colors].split(',').map(&:strip)
+                rescue JSON::ParserError
+                    data[:colors].split(',').map(&:strip)
+                end
+            else
+                data[:colors] || []
             end
         
         data

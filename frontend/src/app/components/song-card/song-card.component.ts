@@ -405,7 +405,21 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   private extractColorsFromCurrentSong() {
     const currentSong = this.songs[this.currSong];
 
-    if (!currentSong || !currentSong.album_art) {
+    if (!currentSong) {
+      this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
+      return;
+    }
+
+    if (currentSong.colors && currentSong.colors.length > 0) {
+      this.colorsChanged.emit(currentSong.colors);
+    } else {
+      this.extractColorsWithColorThief(currentSong);
+    }
+  }
+
+  private extractColorsWithColorThief(song: Song) {
+    if (!song.album_art) {
+      this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
       return;
     }
 
@@ -421,6 +435,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
           this.rgbToHex(rgb[0], rgb[1], rgb[2])
         );
 
+        console.log('ColorThief extracted colors:', colors);
         this.colorsChanged.emit(colors);
       } catch (error) {
         console.error('Could not extract colors:', error);
@@ -433,7 +448,7 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
     };
 
-    img.src = currentSong.album_art;
+    img.src = song.album_art;
   }
 
   private rgbToHex(r: number, g: number, b: number): string {

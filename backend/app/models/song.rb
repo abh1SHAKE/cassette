@@ -10,6 +10,7 @@ class Song
   field :audio_preview, type: String
   field :audio_duration, type: Float
   field :genres, type: Array, default: []
+  field :colors, type: Array, default: []
 
   validates :title, presence: true
   validates :owner, presence: true
