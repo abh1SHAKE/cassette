@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl: 'https://api.sample.com/api/v1'
+    apiUrl: 'https://cassette-3le2.onrender.com'
 }
