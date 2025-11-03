@@ -362,10 +362,22 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
       if (this.hasInteracted) {
         this.initAudio();
       }
-      setTimeout(() => {
-        this.contentState = 'visible';
-      }, 50);
+
+      this.waitForImageLoad().then(() => {
+        setTimeout(() => {
+          this.contentState = 'visible';
+        }, 50);
+      });
     }, this.TRANSITION_DURATION);
+  }
+
+  private waitForImageLoad(): Promise<void> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = () => resolve();
+      img.src = this.songs[this.currSong].album_art;
+    });
   }
 
   private calculateNewIndex(direction: number): number {
