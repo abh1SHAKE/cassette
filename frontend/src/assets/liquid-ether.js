@@ -8,20 +8,20 @@
       colors = ['#5227FF', '#FF9FFC', '#B19EEF'],
       mouseForce = 0,
       cursorSize = 0,
-      isViscous = false,
+      isViscous = true,
       viscous = 5,
       iterationsViscous = 8,
       iterationsPoisson = 32,
-      resolution = 2,
-      isBounce = false,
+      resolution = 0.4,
+      isBounce = true,
       autoDemo = true,
       autoSpeed = 0.01,
-      autoIntensity = 0.8,
+      autoIntensity = 1.1,
       takeoverDuration = 0,
       autoResumeDelay = 0,
       autoRampDuration = 0.6,
-      dt = 0.007,
-      BFECC = true
+      dt = 0.014,
+      BFECC = false
     } = options;
 
     let paletteTex = makePaletteTexture(colors);
