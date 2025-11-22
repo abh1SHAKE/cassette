@@ -114,18 +114,21 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.songs = await firstValueFrom(this.songService.getSongs());
 
         if (this.songs.length > 0) {
-          this.loadingMessage = 'Loading songs...';
+          this.loadingMessage = 'Loading album artwork...';
+
+          await this.preloadImage(0);
           this.extractColorsFromCurrentSong();
 
           this.preloadNextImages(0);
           this.preloadNextAudio(0);
-        } else {
-          this.isLoading = false;
         }
 
+        this.isLoading = false;
+        this.loadingMessage = 'Loading songs...';
         return;
+
       } catch (err) {
-        console.error(`Attemp ${attempt + 1} failed: `, err);
+        console.error(`Attempt ${attempt + 1} failed: `, err);
 
         if (attempt < this.MAX_RETRIES - 1) {
           const delay = this.INITIAL_RETRY_DELAY * Math.pow(2, attempt);
