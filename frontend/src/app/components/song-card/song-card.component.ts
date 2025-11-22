@@ -71,8 +71,8 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   contentState = 'visible';
   loadingMessage: string = 'Loading songs...';
 
-  private readonly MAX_RETRIES = 3;
-  private readonly INITIAL_RETRY_DELAY = 2000;
+  private readonly MAX_RETRIES = 5;
+  private readonly INITIAL_RETRY_DELAY = 5000; 
 
   private colorThief: ColorThief;
   private currentHowl: Howl | null = null;
