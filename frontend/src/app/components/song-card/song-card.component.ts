@@ -19,6 +19,7 @@ import { SongService } from '../../services/song.service';
 import { Song } from '../../models/song.model';
 import { CommonModule } from '@angular/common';
 import { Howl } from 'howler';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-song-card',
@@ -68,6 +69,10 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   error: string | null = null;
   audioProgress = 0;
   contentState = 'visible';
+  loadingMessage: string = 'Loading songs...';
+
+  private readonly MAX_RETRIES = 3;
+  private readonly INITIAL_RETRY_DELAY = 2000;
 
   private colorThief: ColorThief;
   private currentHowl: Howl | null = null;
@@ -98,33 +103,43 @@ export class SongCardComponent implements OnInit, OnDestroy, AfterViewInit {
   private async loadSongs() {
     this.isLoading = true;
     this.error = null;
+    this.loadingMessage = 'Connecting to server...';
 
-    this.songService.getSongs().subscribe({
-      next: async (songs) => {
-        this.songs = songs;
+    for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+      try {
+        if (attempt > 0) {
+          this.loadingMessage = `Retrying... (${attempt + 1}/${this.MAX_RETRIES})`;
+        }
+
+        this.songs = await firstValueFrom(this.songService.getSongs());
 
         if (this.songs.length > 0) {
-          // Priority: Load current song image first
-          await this.preloadImage(0);
-          
-          this.isLoading = false;
+          this.loadingMessage = 'Loading songs...';
           this.extractColorsFromCurrentSong();
 
-          // Background: Preload next 5 images and audio
           this.preloadNextImages(0);
           this.preloadNextAudio(0);
         } else {
           this.isLoading = false;
         }
-      },
-      error: (err) => {
-        console.error('Error loading songs:', err);
-        this.error = 'Failed to load songs. Please try again later.';
-        this.isLoading = false;
 
-        this.colorsChanged.emit(['#121212', '#1a1a1a', '#2a2a2a']);
-      },
-    });
+        return;
+      } catch (err) {
+        console.error(`Attemp ${attempt + 1} failed: `, err);
+
+        if (attempt < this.MAX_RETRIES - 1) {
+          const delay = this.INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+          this.loadingMessage = `Server starting up... retrying in ${delay / 1000}s`;
+
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          this.error = 'Unable to connect to server. Please try again.';
+          this.isLoading = false;
+          this.loadingMessage = 'Loading songs...';
+          this.colorsChanged.emit(['#121212', '#1A1A1A', '#2A2A2A']);
+        }
+      }
+    }
   }
 
   private preloadImage(index: number): Promise<void> {
